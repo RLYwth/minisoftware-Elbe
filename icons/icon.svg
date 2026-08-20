@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Cloak Gespenst">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111a38"/>
+      <stop offset="1" stop-color="#090d1b"/>
+    </linearGradient>
+    <linearGradient id="hood" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a855f7"/>
+      <stop offset="0.52" stop-color="#6d28d9"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="ghost" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5f3ff"/>
+      <stop offset="0.58" stop-color="#ddd6fe"/>
+      <stop offset="1" stop-color="#93c5fd"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#background)"/>
+  <circle cx="256" cy="256" r="184" fill="#8b5cf6" opacity="0.08"/>
+  <g transform="translate(78 70) scale(2.22)">
+    <path d="M24 64C20 31 47 11 79 11c39 0 63 27 57 61 9 6 16 17 17 29-18-8-29-5-38 7-8 11-16 20-30 26-7-10-15-15-24-17-10-2-19 0-31 10 0-16 5-28 15-36-12-8-18-17-21-27z" fill="url(#hood)" filter="url(#glow)"/>
+    <path d="M46 59c0-22 15-38 35-38 22 0 37 18 37 42v37c0 15-7 28-17 35-7-8-14-12-21-12-8 0-16 4-24 12-10-8-16-20-16-34z" fill="url(#ghost)"/>
+    <ellipse cx="69" cy="69" rx="7" ry="10" fill="#0b1020"/>
+    <ellipse cx="98" cy="69" rx="7" ry="10" fill="#0b1020"/>
+    <circle cx="67" cy="66" r="2" fill="#fff"/>
+    <circle cx="96" cy="66" r="2" fill="#fff"/>
+    <path d="M75 86q8 8 16 0" fill="none" stroke="#6d28d9" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
