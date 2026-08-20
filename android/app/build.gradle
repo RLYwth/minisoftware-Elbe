@@ -25,7 +25,7 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    def generatedWebAssets = layout.buildDirectory.dir('generated/webAssets')
+    def generatedWebAssets = layout.buildDirectory.dir('generated/webAssets').get().asFile
     sourceSets {
         main {
             assets.srcDir(generatedWebAssets)
