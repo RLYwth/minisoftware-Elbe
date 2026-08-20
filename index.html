@@ -3,7 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Personenbezogene Angaben ersetzen</title>
+  <title>Cloak — Daten sicher für KI vorbereiten</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     :root {
       --bg: #f4f7fb;
@@ -308,7 +312,24 @@
       padding-left: 22px;
     }
 
-    #warnhinweis li { margin: 5px 0; }
+    #warnhinweis li {
+      margin: 7px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .warn-taggen {
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      border-radius: 8px;
+      background: #edf1f6;
+      color: #293647;
+      font-size: 12px;
+    }
+
+    .warn-taggen:hover { background: #e2e8f0; }
 
     .moeglicher-name {
       background: var(--warn);
@@ -411,6 +432,47 @@
       text-align: center;
     }
 
+    .datei-upload {
+      margin-top: 16px;
+      border: 2px dashed #9fb3cf;
+      border-radius: 12px;
+      padding: 18px;
+      background: #f8fbff;
+      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    .datei-upload.dragover {
+      border-color: var(--primary);
+      background: var(--soft);
+      box-shadow: 0 0 0 3px rgba(36, 87, 214, .10);
+    }
+
+    .drop-hinweis {
+      margin: 0 0 12px;
+      color: #475467;
+      font-size: 14px;
+    }
+
+    .datei-zeile {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .datei-zeile input[type="file"] {
+      width: auto;
+      max-width: 100%;
+      padding: 9px;
+      background: white;
+    }
+
+    .datei-status {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
     @media (max-width: 760px) {
       .seite { width: min(100% - 20px, 1080px); margin-top: 18px; }
       .karte { padding: 18px; }
@@ -423,144 +485,422 @@
       .mini-aktionen { width: 100%; }
       .mini-aktionen button { flex: 1; }
     }
-  </style>
+
+    /* Cloak redesign */
+    :root {
+      --bg: #0b1020;
+      --card: rgba(17,24,39,.78);
+      --text: #f8fafc;
+      --muted: #9aa4b2;
+      --line: rgba(148,163,184,.18);
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --soft: rgba(124,58,237,.12);
+      --warn: rgba(250,204,21,.18);
+      --warn-border: #facc15;
+      --success: rgba(16,185,129,.12);
+      --success-strong: #6ee7b7;
+      --danger-soft: rgba(239,68,68,.12);
+      --danger: #fca5a5;
+      --radius: 22px;
+      --shadow: 0 24px 70px rgba(0,0,0,.28);
+    }
+    body {
+      background:
+        radial-gradient(circle at 15% 10%, rgba(124,58,237,.20), transparent 30%),
+        radial-gradient(circle at 90% 15%, rgba(14,165,233,.16), transparent 28%),
+        linear-gradient(180deg,#0a0f1c 0%,#0d1324 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height:100vh;
+    }
+    .seite { width:min(1180px, calc(100% - 36px)); margin:34px auto 72px; }
+    .kopf { padding:18px 4px 8px; margin-bottom:22px; }
+    .brand-row { display:flex; align-items:center; gap:16px; }
+    .brand-mark { width:52px; height:52px; border-radius:16px; display:grid; place-items:center; font-weight:900; font-size:24px; background:linear-gradient(135deg,#8b5cf6,#22d3ee); color:white; box-shadow:0 12px 30px rgba(124,58,237,.32); }
+    .eyebrow { text-transform:uppercase; letter-spacing:.16em; font-size:11px; font-weight:800; color:#a78bfa; margin-bottom:2px; }
+    h1 { font-size:clamp(34px,5vw,48px); margin:0; letter-spacing:-.045em; }
+    .untertitel { font-size:16px; margin-top:12px; color:#aeb8c7; max-width:760px; }
+    .offline-hinweis { margin-top:16px; background:rgba(16,185,129,.10); border-color:rgba(110,231,183,.25); color:#9ff0d0; box-shadow: inset 0 0 0 1px rgba(255,255,255,.02); }
+    .toolbar { position:sticky; top:14px; z-index:10; border-radius:18px; background:rgba(10,15,28,.72); border:1px solid rgba(148,163,184,.16); backdrop-filter:blur(18px); box-shadow:0 16px 40px rgba(0,0,0,.16); }
+    .status-chip { background:rgba(148,163,184,.10); color:#cbd5e1; border:1px solid rgba(148,163,184,.12); }
+    .status-chip.erfolg { background:rgba(16,185,129,.10); color:#9ff0d0; }
+    .status-chip.warnung { background:rgba(245,158,11,.12); color:#fcd34d; }
+    .karte { background:linear-gradient(180deg,rgba(17,24,39,.88),rgba(15,23,42,.82)); border:1px solid rgba(148,163,184,.16); box-shadow:var(--shadow); position:relative; overflow:hidden; }
+    .karte::before { content:''; position:absolute; inset:0 0 auto 0; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent); }
+    .abschnitt-kopf { margin-bottom:22px; }
+    .schritt { width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,#7c3aed,#2563eb); box-shadow:0 10px 24px rgba(124,58,237,.25); }
+    h2 { font-size:22px; letter-spacing:-.02em; }
+    h3 { color:#f1f5f9; }
+    .beschreibung,.hinweis-klein,.datenschutz { color:var(--muted); }
+    label { color:#dbe4ef; }
+    textarea,input { background:rgba(2,6,23,.50); color:#f8fafc; border:1px solid rgba(148,163,184,.22); }
+    textarea::placeholder,input::placeholder { color:#697586; }
+    textarea:focus,input:focus { border-color:#8b5cf6; box-shadow:0 0 0 4px rgba(139,92,246,.14); }
+    details.zusatzoptionen { background:rgba(2,6,23,.28); border-color:rgba(148,163,184,.14); }
+    button { border-radius:12px; padding:11px 16px; }
+    .primaer { background:linear-gradient(135deg,#7c3aed,#2563eb); box-shadow:0 10px 24px rgba(79,70,229,.20); }
+    .primaer:hover { filter:brightness(1.08); }
+    .sekundaer { background:rgba(148,163,184,.14); color:#e5e7eb; }
+    .sekundaer:hover { background:rgba(148,163,184,.20); }
+    .tertiar { color:#cbd5e1; border-color:rgba(148,163,184,.18); }
+    .tertiar:hover { background:rgba(148,163,184,.08); }
+    .gefahr { color:#fecaca; background:rgba(239,68,68,.10); border-color:rgba(248,113,113,.20); }
+    .ausgabe { background:rgba(2,6,23,.38); border-color:rgba(148,163,184,.16); }
+    .pruefbox { background:linear-gradient(180deg,rgba(245,158,11,.09),rgba(245,158,11,.04)); border-color:rgba(251,191,36,.24); }
+    .manuell { background:rgba(124,58,237,.08); border-color:rgba(167,139,250,.18); }
+    .table-wrap { border-color:rgba(148,163,184,.16); }
+    table { background:transparent; }
+    th { background:rgba(148,163,184,.08); color:#cbd5e1; }
+    td,th { border-bottom-color:rgba(148,163,184,.12); }
+    tbody td:first-child { color:#a78bfa; }
+    .toast { background:#111827; border:1px solid rgba(148,163,184,.18); }
+    .drop-zone { border:1px dashed rgba(139,92,246,.42)!important; background:linear-gradient(180deg,rgba(124,58,237,.08),rgba(34,211,238,.04))!important; border-radius:16px!important; }
+    .drop-zone.dragover { border-color:#22d3ee!important; background:rgba(34,211,238,.10)!important; transform:translateY(-1px); }
+    @media (max-width:760px){ .toolbar{position:static;} .seite{width:min(100% - 20px,1180px);} }
+
+
+
+    /* Cloak v3 — visual system inspired by the approved dashboard concept */
+    body { overflow-x:hidden; }
+    .app-shell { min-height:100vh; display:grid; grid-template-columns:238px minmax(0,1fr); }
+    .sidebar { position:sticky; top:0; height:100vh; padding:30px 18px 22px; border-right:1px solid rgba(96,165,250,.14); background:rgba(3,7,24,.70); backdrop-filter:blur(20px); display:flex; flex-direction:column; gap:28px; z-index:20; }
+    .side-brand { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:0 10px; }
+    .ghost-logo { width:118px; height:112px; filter:drop-shadow(0 14px 30px rgba(124,58,237,.35)); }
+    .side-brand h1 { font-size:44px; line-height:.9; background:linear-gradient(135deg,#fff 10%,#d8b4fe 48%,#60a5fa); -webkit-background-clip:text; color:transparent; }
+    .tagline { font-size:10px; letter-spacing:.20em; text-transform:uppercase; color:#a7b3c7; font-weight:800; }
+    .side-nav { display:grid; gap:8px; }
+    .side-link { display:flex; align-items:center; gap:12px; min-height:48px; padding:0 14px; border-radius:12px; color:#b8c3d6; text-decoration:none; font-weight:650; font-size:14px; border:1px solid transparent; }
+    .side-link.active { color:white; background:linear-gradient(135deg,#a21caf,#2563eb); box-shadow:0 12px 28px rgba(79,70,229,.28); }
+    .nav-icon { width:22px; text-align:center; font-size:18px; }
+    .privacy-card { margin-top:auto; padding:16px; border:1px solid rgba(52,211,153,.38); border-radius:14px; background:linear-gradient(180deg,rgba(6,78,59,.22),rgba(2,44,34,.15)); box-shadow:inset 0 0 24px rgba(16,185,129,.05); }
+    .privacy-card strong { display:block; color:#d1fae5; margin-bottom:8px; }
+    .privacy-card p { margin:0; color:#a7c8bd; font-size:13px; line-height:1.55; }
+    .workspace { min-width:0; }
+    .seite { width:min(1280px, calc(100% - 48px)); margin:0 auto 54px; }
+    .hero { position:relative; min-height:190px; padding:42px 250px 24px 2px; display:flex; flex-direction:column; justify-content:center; }
+    .hero .eyebrow { color:#c084fc; }
+    .hero h2 { margin:0; font-size:clamp(30px,4vw,46px); line-height:1.07; letter-spacing:-.04em; background:linear-gradient(90deg,#f8fafc 0%,#e9d5ff 46%,#bfdbfe 100%); -webkit-background-clip:text; color:transparent; }
+    .hero p { max-width:830px; margin:12px 0 0; color:#b5bfd1; font-size:16px; }
+    .hero-ghost { position:absolute; right:24px; bottom:-6px; width:220px; height:190px; filter:drop-shadow(0 22px 50px rgba(79,70,229,.42)); }
+    .hero-stars { position:absolute; inset:0; pointer-events:none; opacity:.85; background-image:radial-gradient(circle at 82% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 92% 35%,#60a5fa 0 1px,transparent 2px),radial-gradient(circle at 75% 45%,#c084fc 0 1.5px,transparent 2.5px),radial-gradient(circle at 88% 12%,#fff 0 1px,transparent 2px); }
+    .offline-hinweis { position:absolute; top:28px; right:0; margin:0; }
+    .workflow-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:12px; margin-bottom:16px; border:1px solid rgba(96,165,250,.30); border-radius:16px; background:rgba(7,12,31,.55); }
+    .workflow-tab { display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid rgba(148,163,184,.15); border-radius:13px; background:rgba(15,23,42,.48); }
+    .workflow-tab:first-child { background:linear-gradient(135deg,rgba(124,58,237,.28),rgba(30,64,175,.16)); }
+    .tab-num { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; background:linear-gradient(135deg,#9333ea,#2563eb); color:white; font-weight:850; box-shadow:0 0 26px rgba(124,58,237,.30); }
+    .tab-copy b { display:block; font-size:13px; color:#f8fafc; }
+    .tab-copy span { font-size:11px; color:#8fa0b8; }
+    .toolbar { top:10px; margin:0 0 18px; }
+    .karte { border-color:rgba(96,165,250,.38); border-radius:18px; padding:22px; margin-bottom:14px; box-shadow:0 20px 55px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.03); }
+    .karte:hover { border-color:rgba(129,140,248,.48); }
+    .abschnitt-kopf { align-items:center; margin-bottom:18px; }
+    .schritt { width:46px; height:46px; border-radius:50%; font-size:20px; }
+    .input-grid { display:grid; grid-template-columns:minmax(340px,.95fr) minmax(360px,1.05fr); gap:28px; align-items:stretch; }
+    .upload-visual { display:grid; grid-template-columns:180px minmax(0,1fr); gap:18px; align-items:center; }
+    .file-orbit { min-height:250px; display:grid; place-items:center; position:relative; }
+    .file-orbit::after { content:''; position:absolute; width:150px; height:150px; border-radius:50%; background:radial-gradient(circle,rgba(59,130,246,.25),rgba(124,58,237,.08) 58%,transparent 72%); filter:blur(8px); }
+    .file-stack { position:relative; z-index:2; font-size:72px; filter:drop-shadow(0 12px 18px rgba(37,99,235,.35)); }
+    .file-icons { position:absolute; inset:0; z-index:3; }
+    .file-icon { position:absolute; width:44px; height:44px; border-radius:10px; display:grid; place-items:center; font-weight:900; font-size:11px; color:white; box-shadow:0 10px 28px rgba(0,0,0,.28); }
+    .file-icon.pdf{left:44px;top:28px;background:#ef4444}.file-icon.doc{right:28px;top:42px;background:#3b82f6}.file-icon.xls{left:26px;bottom:42px;background:#10b981}.file-icon.ppt{right:20px;bottom:52px;background:#f97316}
+    .datei-upload { margin:0; min-height:250px; padding:28px 24px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border:2px dashed transparent; border-radius:16px; background:linear-gradient(#0b1430,#0b1430) padding-box,linear-gradient(135deg,#d946ef,#8b5cf6,#38bdf8) border-box; box-shadow:inset 0 0 40px rgba(124,58,237,.06); }
+    .datei-upload.dragover { border-color:transparent; background:linear-gradient(rgba(37,99,235,.15),rgba(15,23,42,.90)) padding-box,linear-gradient(135deg,#22d3ee,#a855f7) border-box; box-shadow:0 0 0 4px rgba(34,211,238,.08),0 0 36px rgba(124,58,237,.18); }
+    .upload-cloud { font-size:48px; line-height:1; margin-bottom:12px; filter:drop-shadow(0 0 18px rgba(139,92,246,.6)); }
+    .datei-upload > label { font-size:16px; color:#fff; margin:0; }
+    .drop-hinweis { color:#a9b5c8; margin:4px 0 15px; }
+    #dateiUpload { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+    .datei-zeile { justify-content:center; }
+    #dateiAuswaehlen { min-width:190px; background:linear-gradient(135deg,#a21caf,#7c3aed 48%,#2563eb); color:#fff; border:1px solid rgba(255,255,255,.10); box-shadow:0 10px 25px rgba(79,70,229,.25); }
+    #dateiEntfernen { background:rgba(15,23,42,.60); }
+    .datei-status { max-width:520px; font-size:11px; line-height:1.4; margin-top:14px; color:#7f8da5; }
+    .text-pane { display:flex; flex-direction:column; }
+    .text-pane textarea { flex:1; min-height:250px; }
+    .recognition-box { margin-left:auto; width:min(510px,100%); padding:16px 18px; border:1px solid rgba(96,165,250,.26); border-radius:14px; background:rgba(10,20,48,.58); }
+    .recognition-box strong { display:block; margin-bottom:8px; }
+    .recognition-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px 22px; color:#c6d0df; font-size:13px; }
+    .recognition-grid span::before { content:'✓'; color:#c084fc; font-weight:900; margin-right:8px; }
+    .section-action-row { display:flex; align-items:center; gap:18px; justify-content:space-between; }
+    .status-card { min-width:390px; padding:14px 18px; border:1px solid rgba(52,211,153,.55); border-radius:14px; background:linear-gradient(135deg,rgba(5,150,105,.18),rgba(6,78,59,.12)); color:#bbf7d0; }
+    .status-card strong { display:block; color:#86efac; margin-bottom:4px; }
+    .status-card p { margin:0; color:#9dd5b2; font-size:13px; }
+    .pruefbox { border-color:rgba(96,165,250,.27); background:rgba(10,20,48,.52); }
+    .warn-taggen { background:linear-gradient(135deg,#7e22ce,#2563eb); color:white; }
+    .moeglicher-name { background:rgba(217,70,239,.22); border-bottom-color:#d946ef; color:#f5d0fe; }
+    .datenschutz { padding-bottom:16px; }
+    @media(max-width:1050px){ .app-shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;flex-direction:row;align-items:center;padding:14px 18px;border-right:0;border-bottom:1px solid rgba(96,165,250,.14)}.side-brand{flex-direction:row;align-items:center}.ghost-logo{width:62px;height:58px}.side-brand h1{font-size:28px}.tagline,.side-nav,.privacy-card{display:none}.hero{padding-right:180px}.hero-ghost{width:170px}.input-grid{grid-template-columns:1fr}.upload-visual{grid-template-columns:160px 1fr}}
+    @media(max-width:760px){ .seite{width:min(100% - 20px,1280px)}.hero{padding:28px 0 18px}.hero-ghost,.offline-hinweis{display:none}.workflow-tabs{grid-template-columns:1fr 1fr}.upload-visual{grid-template-columns:1fr}.file-orbit{display:none}.section-action-row{align-items:stretch;flex-direction:column}.status-card{min-width:0}.recognition-box{width:100%}.input-grid{gap:16px}.datei-upload{min-height:220px}.sidebar{position:static} }
+
+  
+    .namen-dropdown { margin:0; }
+    .namen-dropdown summary { display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; list-style:none; font-weight:800; color:#f8fbff; }
+    .namen-dropdown summary::-webkit-details-marker { display:none; }
+    .namen-dropdown summary::after { content:"⌄"; display:grid; place-items:center; width:28px; height:28px; margin-left:auto; border:1px solid rgba(148,163,184,.22); border-radius:9px; color:#c4b5fd; background:rgba(255,255,255,.04); transition:transform .18s ease, background .18s ease; }
+    .namen-dropdown[open] summary::after { transform:rotate(180deg); background:rgba(139,92,246,.12); }
+    .namen-dropdown-inhalt { padding-top:10px; }
+    .namen-anzahl { display:inline-flex; align-items:center; justify-content:center; min-width:28px; height:24px; padding:0 8px; margin-left:8px; border-radius:999px; background:rgba(139,92,246,.16); border:1px solid rgba(167,139,250,.24); color:#ddd6fe; font-size:12px; font-weight:800; }
+</style>
 </head>
 <body>
-  <main class="seite">
-    <header class="kopf">
-      <h1>Personenbezogene Angaben ersetzen</h1>
-      <p class="untertitel">Text lokal pseudonymisieren, mögliche übersehene Namen prüfen und Platzhalter nach der KI-Verarbeitung wieder zurückwandeln.</p>
-      <div class="offline-hinweis">Läuft vollständig lokal im Browser</div>
-    </header>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="side-brand"><svg class="ghost-logo" viewBox="0 0 160 150" role="img" aria-label="Cloak Gespenst"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f3ff"/><stop offset=".58" stop-color="#ddd6fe"/><stop offset="1" stop-color="#93c5fd"/></linearGradient><linearGradient id="hood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a855f7"/><stop offset=".52" stop-color="#6d28d9"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="M24 64C20 31 47 11 79 11c39 0 63 27 57 61 9 6 16 17 17 29-18-8-29-5-38 7-8 11-16 20-30 26-7-10-15-15-24-17-10-2-19 0-31 10 0-16 5-28 15-36-12-8-18-17-21-27z" fill="url(#hood)" filter="url(#glow)" opacity=".98"/><path d="M46 59c0-22 15-38 35-38 22 0 37 18 37 42v37c0 15-7 28-17 35-7-8-14-12-21-12-8 0-16 4-24 12-10-8-16-20-16-34z" fill="url(#g1)"/><ellipse cx="69" cy="69" rx="7" ry="10" fill="#0b1020"/><ellipse cx="98" cy="69" rx="7" ry="10" fill="#0b1020"/><circle cx="67" cy="66" r="2" fill="#fff"/><circle cx="96" cy="66" r="2" fill="#fff"/><path d="M75 86q8 8 16 0" fill="none" stroke="#6d28d9" stroke-width="3" stroke-linecap="round"/><path d="M25 64c14-14 28-22 43-25M133 69c-11-16-27-26-44-31" fill="none" stroke="#c4b5fd" stroke-width="4" stroke-linecap="round" opacity=".45"/></svg><div><h1>Cloak</h1><div class="tagline">Verhüllt, was zählt.</div></div></div>
+      <nav class="side-nav" aria-label="Cloak Navigation">
+        <a class="side-link active" href="#schritt1"><span class="nav-icon">◈</span>Pseudonymisieren</a>
+        <a class="side-link" href="#wortliste"><span class="nav-icon">☷</span>Wortliste</a>
+        <a class="side-link" href="#zuordnung"><span class="nav-icon">↺</span>Zuordnung</a>
+        <a class="side-link" href="#datenschutz"><span class="nav-icon">ⓘ</span>Über Cloak</a>
+      </nav>
+      <div class="privacy-card"><strong>🛡 100% lokale Verarbeitung</strong><p>Deine Dokumentinhalte bleiben auf deinem Gerät. Keine Server-Verarbeitung deiner Texte.</p></div>
+    </aside>
 
-    <div class="toolbar" aria-label="Status und Aktionen">
-      <div class="statusleiste">
-        <span id="statusBearbeitung" class="status-chip">Bereit</span>
-        <span id="statusTreffer" class="status-chip">0 Ersetzungen</span>
-        <span id="statusWarnungen" class="status-chip">0 Prüfhilfen</span>
-      </div>
-      <button id="allesZuruecksetzen" class="gefahr">Alles zurücksetzen</button>
-    </div>
+    <div class="workspace">
+      <main class="seite">
+        <header class="hero">
+          <div class="hero-stars"></div>
+          <div class="eyebrow">Privacy Workspace</div>
+          <h2>Schütze deine Daten, bevor sie die KI erreicht.</h2>
+          <p>Bereinige Texte und Dokumente von personenbezogenen Angaben – übersichtlich, kontrollierbar und lokal im Browser.</p>
+          <div class="offline-hinweis">Lokal & sicher</div>
+          <svg class="hero-ghost" viewBox="0 0 160 150" role="img" aria-label="Cloak Maskottchen"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f3ff"/><stop offset=".58" stop-color="#ddd6fe"/><stop offset="1" stop-color="#93c5fd"/></linearGradient><linearGradient id="hood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a855f7"/><stop offset=".52" stop-color="#6d28d9"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="M24 64C20 31 47 11 79 11c39 0 63 27 57 61 9 6 16 17 17 29-18-8-29-5-38 7-8 11-16 20-30 26-7-10-15-15-24-17-10-2-19 0-31 10 0-16 5-28 15-36-12-8-18-17-21-27z" fill="url(#hood)" filter="url(#glow)" opacity=".98"/><path d="M46 59c0-22 15-38 35-38 22 0 37 18 37 42v37c0 15-7 28-17 35-7-8-14-12-21-12-8 0-16 4-24 12-10-8-16-20-16-34z" fill="url(#g1)"/><ellipse cx="69" cy="69" rx="7" ry="10" fill="#0b1020"/><ellipse cx="98" cy="69" rx="7" ry="10" fill="#0b1020"/><circle cx="67" cy="66" r="2" fill="#fff"/><circle cx="96" cy="66" r="2" fill="#fff"/><path d="M75 86q8 8 16 0" fill="none" stroke="#6d28d9" stroke-width="3" stroke-linecap="round"/><path d="M25 64c14-14 28-22 43-25M133 69c-11-16-27-26-44-31" fill="none" stroke="#c4b5fd" stroke-width="4" stroke-linecap="round" opacity=".45"/></svg>
+        </header>
 
-    <section class="karte">
-      <div class="abschnitt-kopf">
-        <div class="schritt">1</div>
-        <div>
-          <h2>Text vorbereiten</h2>
-          <p class="beschreibung">Ausgangstext einfügen und bei Bedarf zusätzliche Namen, Firmen oder Orte hinterlegen.</p>
+        <div class="workflow-tabs" aria-label="Arbeitsablauf">
+          <div class="workflow-tab"><div class="tab-num">1</div><div class="tab-copy"><b>Hochladen / Einfügen</b><span>Dokument oder Text</span></div></div>
+          <div class="workflow-tab"><div class="tab-num">2</div><div class="tab-copy"><b>Analysieren</b><span>Erkennen & ersetzen</span></div></div>
+          <div class="workflow-tab"><div class="tab-num">3</div><div class="tab-copy"><b>Prüfen</b><span>Namen & Begriffe</span></div></div>
+          <div class="workflow-tab"><div class="tab-num">4</div><div class="tab-copy"><b>Übernehmen</b><span>Zurückwandeln & Mapping</span></div></div>
         </div>
-      </div>
 
-      <div class="feldgruppe">
-        <label for="eingabe">Eingabetext</label>
-        <textarea id="eingabe" placeholder="Text hier einfügen ..."></textarea>
-      </div>
-
-      <details class="zusatzoptionen">
-        <summary>Eigene Wortliste hinzufügen <span class="beschreibung">(optional)</span></summary>
-        <div class="details-inhalt">
-          <label for="wortliste">Namen, Firmen oder Orte</label>
-          <textarea id="wortliste" placeholder="Ein Eintrag pro Zeile, z. B. Max Mustermann, Muster GmbH, Berlin ..."></textarea>
-          <p class="hinweis-klein">Einträge aus dieser Liste werden zusätzlich durch nummerierte Platzhalter ersetzt.</p>
-        </div>
-      </details>
-
-      <div class="aktionen">
-        <button id="bereinigen" class="primaer">Text jetzt bereinigen</button>
-      </div>
-    </section>
-
-    <section class="karte">
-      <div class="abschnitt-kopf">
-        <div class="schritt">2</div>
-        <div>
-          <h2>Bereinigten Text prüfen</h2>
-          <p class="beschreibung">Gelb markierte Wörter sind nur Hinweise auf möglicherweise übersehene Namen und werden nicht automatisch ersetzt.</p>
-        </div>
-      </div>
-
-      <div class="ergebnis-grid">
-        <div>
-          <div class="ausgabe-kopf">
-            <h3>Bereinigter Text</h3>
-            <div class="mini-aktionen">
-              <button id="bereinigtKopieren" class="tertiar">Text kopieren</button>
-            </div>
+        <div class="toolbar" aria-label="Status und Aktionen">
+          <div class="statusleiste">
+            <span id="statusBearbeitung" class="status-chip">Bereit</span>
+            <span id="statusTreffer" class="status-chip">0 Ersetzungen</span>
+            <span id="statusWarnungen" class="status-chip">0 Prüfhilfen</span>
           </div>
-          <div id="ausgabe" class="ausgabe"><span class="leerzustand">Nach dem Bereinigen erscheint hier der pseudonymisierte Text.</span></div>
+          <button id="allesZuruecksetzen" class="gefahr">↻ Alles zurücksetzen</button>
+        </div>
 
-          <div class="manuell">
-            <h3>Manuell pseudonymisieren</h3>
-            <div class="hinweis-klein">Text oben markieren, ein Kürzel festlegen und nur diese Auswahl ersetzen.</div>
-            <div class="manuell-zeile">
-              <div>
-                <label for="manuellKuerzel">Platzhalter-Kürzel</label>
-                <input id="manuellKuerzel" type="text" value="MANUELL" aria-label="Platzhalter-Kürzel" maxlength="20">
+        <section id="schritt1" class="karte">
+          <div class="abschnitt-kopf"><div class="schritt">1</div><div><h2>Dokument hochladen oder Text einfügen</h2><p class="beschreibung">Unterstützt gängige Dokument- und Textformate. Inhalte werden anschließend in denselben Cloak-Workflow übernommen.</p></div></div>
+          <div class="input-grid">
+            <div class="upload-visual">
+              <div class="file-orbit" aria-hidden="true"><div class="file-stack">📂</div><div class="file-icons"><span class="file-icon pdf">PDF</span><span class="file-icon doc">W</span><span class="file-icon xls">X</span><span class="file-icon ppt">P</span></div></div>
+              <div id="dateiDropzone" class="datei-upload" tabindex="0" role="button" aria-label="Dokument auswählen oder hierher ziehen">
+                <div class="upload-cloud">☁︎↑</div><label for="dateiUpload">Datei hierher ziehen & ablegen</label><p class="drop-hinweis">oder bequem über den Button auswählen</p>
+                <div class="datei-zeile"><input id="dateiUpload" type="file" accept=".txt,.md,.csv,.tsv,.json,.xml,.html,.htm,.rtf,.pdf,.docx,.xlsx,.xls,.ods,.pptx,.odt,.epub,.log,.yaml,.yml,.ini,.sql,.js,.ts,.css,.py,.java,.c,.cpp,.h,.hpp,.go,.rs,.php,.tex,.eml" aria-describedby="dateiStatus"><button id="dateiAuswaehlen" type="button" class="sekundaer">▣ Datei auswählen</button><button id="dateiEntfernen" type="button" class="tertiar">Entfernen</button></div>
+                <div id="dateiStatus" class="datei-status">PDF, Word, Excel, PowerPoint, Text, OpenDocument, EPUB und viele weitere Formate.</div>
               </div>
-              <button id="manuellErsetzen" class="sekundaer">Auswahl ersetzen</button>
             </div>
-            <div id="manuellMeldung" class="hinweis-klein" aria-live="polite"></div>
+            <div class="text-pane"><label for="eingabe">Oder Text direkt einfügen</label><textarea id="eingabe" placeholder="Füge deinen Text hier ein ..."></textarea></div>
           </div>
-        </div>
+          <details class="zusatzoptionen"><summary>Eigene Wortliste hinzufügen <span class="beschreibung">(optional)</span></summary><div class="details-inhalt"><label for="wortliste">Namen, Firmen oder Orte</label><textarea id="wortliste" placeholder="Ein Eintrag pro Zeile, z. B. Max Mustermann, Muster GmbH, Berlin ..."></textarea><p class="hinweis-klein">Einträge aus dieser Liste werden zusätzlich durch nummerierte Platzhalter ersetzt.</p></div></details>
+        </section>
 
-        <aside class="pruefbox">
-          <h3>Mögliche übersehene Namen</h3>
-          <p class="hinweis-klein">Bitte selbst prüfen. Diese Treffer werden nicht automatisch pseudonymisiert.</p>
-          <div id="warnhinweis">Keine Prüfung durchgeführt.</div>
-        </aside>
-      </div>
-    </section>
+        <section class="karte">
+          <div class="abschnitt-kopf"><div class="schritt">2</div><div><h2>Text analysieren & bereinigen</h2><p class="beschreibung">Personenbezogene Angaben automatisch erkennen und durch Platzhalter ersetzen.</p></div></div>
+          <div class="section-action-row"><div class="aktionen" style="margin:0"><button id="bereinigen" class="primaer">✣ Text analysieren & bereinigen</button></div><div class="recognition-box"><strong>Was wird erkannt?</strong><div class="recognition-grid"><span>Namen von Personen</span><span>Telefonnummern</span><span>IBAN & Kennzeichen</span><span>Kundennummern</span><span>E-Mail-Adressen</span><span>Eigene Wortliste</span></div></div></div>
+        </section>
 
-    <section class="karte">
-      <div class="abschnitt-kopf">
-        <div class="schritt">3</div>
-        <div>
-          <h2>Antwort der KI zurückwandeln</h2>
-          <p class="beschreibung">KI-Antwort mit Platzhaltern einfügen und bekannte Platzhalter wieder durch die Originalwerte ersetzen.</p>
-        </div>
-      </div>
+        <section class="karte">
+          <div class="abschnitt-kopf"><div class="schritt">3</div><div><h2>Manuell prüfen & anpassen</h2><p class="beschreibung">Bereinigten Text kontrollieren, mögliche übersehene Namen taggen und einzelne Textstellen gezielt pseudonymisieren.</p></div></div>
+          <div class="ergebnis-grid"><div><div class="ausgabe-kopf"><h3>Bereinigter Text</h3><div class="mini-aktionen"><button id="bereinigtKopieren" class="tertiar">Text kopieren</button></div></div><div id="ausgabe" class="ausgabe"><span class="leerzustand">Nach dem Bereinigen erscheint hier der pseudonymisierte Text.</span></div><div class="manuell"><h3>Manuell pseudonymisieren</h3><div class="hinweis-klein">Text oben markieren, ein Kürzel festlegen und nur diese Auswahl ersetzen.</div><div class="manuell-zeile"><div><label for="manuellKuerzel">Platzhalter-Kürzel</label><input id="manuellKuerzel" type="text" value="MANUELL" aria-label="Platzhalter-Kürzel" maxlength="20"></div><button id="manuellErsetzen" class="sekundaer">Auswahl ersetzen</button></div><div id="manuellMeldung" class="hinweis-klein" aria-live="polite"></div></div></div><aside class="pruefbox"><details class="namen-dropdown"><summary><span>Mögliche übersehene Namen</span><span id="namenDropdownAnzahl" class="namen-anzahl">0</span></summary><div class="namen-dropdown-inhalt"><p class="hinweis-klein">Treffer können hier direkt getaggt und im Text ersetzt werden.</p><div id="warnhinweis">Keine Prüfung durchgeführt.</div></div></details></aside></div>
+        </section>
 
-      <div class="ausgabe-kopf">
-        <label for="kiAntwort" style="margin:0">Antwort der KI</label>
-        <div class="mini-aktionen">
-          <button id="kiAntwortKopieren" class="tertiar">Antwort kopieren</button>
-        </div>
-      </div>
-      <textarea id="kiAntwort" placeholder="Antwort der KI hier einfügen ..."></textarea>
-      <div class="aktionen">
-        <button id="zurueckwandeln" class="primaer">Platzhalter zurückwandeln</button>
-      </div>
-    </section>
+        <section class="karte">
+          <div class="abschnitt-kopf"><div class="schritt">4</div><div><h2>Ergebnis übernehmen</h2><p class="beschreibung">KI-Antwort mit Platzhaltern zurückwandeln und die Zuordnung kontrollieren.</p></div></div>
+          <div class="section-action-row"><div style="flex:1"><div class="ausgabe-kopf"><label for="kiAntwort" style="margin:0">Antwort der KI</label><div class="mini-aktionen"><button id="kiAntwortKopieren" class="tertiar">Antwort kopieren</button></div></div><textarea id="kiAntwort" placeholder="Antwort der KI hier einfügen ..."></textarea><div class="aktionen"><button id="zurueckwandeln" class="primaer">✓ Platzhalter zurückwandeln</button></div></div><div class="status-card"><strong>🔒 Bereit für KI-Systeme</strong><p>Dein pseudonymisierter Text kann verarbeitet und anschließend mit den bekannten Zuordnungen wieder zurückgewandelt werden.</p></div></div>
+          <div class="table-wrap" style="margin-top:20px"><table><thead><tr><th>Platzhalter</th><th>Originalwert</th></tr></thead><tbody id="zuordnung"><tr><td colspan="2" class="leerzustand">Noch keine Zuordnungen vorhanden.</td></tr></tbody></table></div>
+        </section>
 
-    <section class="karte">
-      <div class="abschnitt-kopf">
-        <div class="schritt">4</div>
-        <div>
-          <h2>Zuordnung</h2>
-          <p class="beschreibung">Übersicht aller in diesem Durchlauf erzeugten Platzhalter und Originalwerte.</p>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Platzhalter</th>
-              <th>Originalwert</th>
-            </tr>
-          </thead>
-          <tbody id="zuordnung"><tr><td colspan="2" class="leerzustand">Noch keine Zuordnungen vorhanden.</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <p class="datenschutz">Keine Datenübertragung: Die Verarbeitung findet ausschließlich lokal in dieser HTML-Datei statt.</p>
-  </main>
+        <p id="datenschutz" class="datenschutz">Dokumentinhalte werden lokal im Browser verarbeitet. Die benötigten Dateibibliotheken werden beim Öffnen der Seite über ein CDN geladen; Dokumentinhalte werden dabei nicht hochgeladen.</p>
+      </main>
+    </div>
+  </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <script type="module">
+    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+    window.pdfjsLib = pdfjsLib;
+  </script>
   <script>
     let aktuelleZuordnungen = [];
     let bereinigterText = '';
     const manuelleZaehler = new Map();
+
+    let geladeneDatei = null;
+
+    function setzeDateiStatus(text, istFehler) {
+      const status = document.getElementById('dateiStatus');
+      status.textContent = text;
+      status.style.color = istFehler ? 'var(--danger)' : 'var(--muted)';
+    }
+
+    function dateiendung(name) {
+      const teile = name.toLowerCase().split('.');
+      return teile.length > 1 ? teile.pop() : '';
+    }
+
+    async function liesPdf(file) {
+      if (!window.pdfjsLib) {
+        throw new Error('PDF-Unterstützung konnte nicht geladen werden.');
+      }
+      const buffer = await file.arrayBuffer();
+      const pdf = await window.pdfjsLib.getDocument({ data: buffer }).promise;
+      const seiten = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        seiten.push(content.items.map(function (item) { return item.str; }).join(' '));
+      }
+      return seiten.join('\n\n');
+    }
+
+    async function liesDocx(file) {
+      if (!window.mammoth) {
+        throw new Error('Word-Unterstützung konnte nicht geladen werden.');
+      }
+      const buffer = await file.arrayBuffer();
+      const result = await window.mammoth.extractRawText({ arrayBuffer: buffer });
+      return result.value;
+    }
+
+    async function liesTabelle(file) {
+      if (!window.XLSX) {
+        throw new Error('Excel-Unterstützung konnte nicht geladen werden.');
+      }
+      const buffer = await file.arrayBuffer();
+      const workbook = window.XLSX.read(buffer, { type: 'array' });
+      const teile = [];
+      workbook.SheetNames.forEach(function (name) {
+        const csv = window.XLSX.utils.sheet_to_csv(workbook.Sheets[name], { blankrows: false });
+        teile.push('### Tabellenblatt: ' + name + '\n' + csv);
+      });
+      return teile.join('\n\n');
+    }
+
+
+    function xmlZuText(xml) {
+      const doc = new DOMParser().parseFromString(xml, 'application/xml');
+      if (doc.querySelector('parsererror')) return '';
+      return Array.from(doc.querySelectorAll('p, text\\:p, w\\:p, a\\:t, t'))
+        .map(function (node) { return node.textContent.trim(); })
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    async function liesZipDokument(file, ext) {
+      if (!window.JSZip) {
+        throw new Error('Unterstützung für dieses Dokumentformat konnte nicht geladen werden.');
+      }
+      const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+      let muster = [];
+      if (ext === 'pptx') muster = [/^ppt\/slides\/slide\d+\.xml$/];
+      if (ext === 'odt') muster = [/^content\.xml$/];
+      if (ext === 'epub') muster = [/\.(xhtml|html|htm)$/i];
+
+      const namen = Object.keys(zip.files).filter(function (name) {
+        return muster.some(function (regex) { return regex.test(name); });
+      }).sort();
+      const teile = [];
+      for (const name of namen) {
+        const inhalt = await zip.file(name).async('string');
+        const text = xmlZuText(inhalt);
+        if (text) teile.push(text);
+      }
+      return teile.join('\n\n');
+    }
+
+    async function liesDatei(file) {
+      const ext = dateiendung(file.name);
+      if (ext === 'pdf') return liesPdf(file);
+      if (ext === 'docx') return liesDocx(file);
+      if (['xlsx', 'xls', 'ods'].includes(ext)) return liesTabelle(file);
+      if (['pptx', 'odt', 'epub'].includes(ext)) return liesZipDokument(file, ext);
+
+      const textbasierteFormate = [
+        'txt','md','csv','tsv','json','xml','html','htm','rtf','log','yaml','yml','ini',
+        'sql','js','ts','css','py','java','c','cpp','h','hpp','go','rs','php','tex','eml'
+      ];
+      if (textbasierteFormate.includes(ext) || (file.type && file.type.startsWith('text/'))) {
+        return file.text();
+      }
+
+      throw new Error('Dieses Dateiformat kann in einer einzelnen lokalen HTML-Datei nicht zuverlässig ausgelesen werden: .' + (ext || 'unbekannt'));
+    }
+
+    async function verarbeiteDatei(file) {
+      if (!file) return;
+      geladeneDatei = file;
+      setzeDateiStatus('Lese „' + file.name + '“ ...');
+      try {
+        const text = await liesDatei(file);
+        if (!text.trim()) {
+          throw new Error('In der Datei wurde kein auslesbarer Text gefunden. Bei eingescannten PDFs ist OCR erforderlich.');
+        }
+        document.getElementById('eingabe').value = text;
+        setzeDateiStatus('„' + file.name + '“ wurde eingelesen (' + text.length.toLocaleString('de-DE') + ' Zeichen).');
+        zeigeToast('Dokument wurde lokal eingelesen.');
+      } catch (error) {
+        geladeneDatei = null;
+        document.getElementById('dateiUpload').value = '';
+        setzeDateiStatus(error.message || 'Dokument konnte nicht gelesen werden.', true);
+        zeigeToast('Dokument konnte nicht gelesen werden.');
+      }
+    }
+
+    const dateiUpload = document.getElementById('dateiUpload');
+    const dateiDropzone = document.getElementById('dateiDropzone');
+
+    dateiUpload.addEventListener('change', function (event) {
+      verarbeiteDatei(event.target.files && event.target.files[0]);
+    });
+
+    document.getElementById('dateiAuswaehlen').addEventListener('click', function (event) {
+      event.stopPropagation();
+      dateiUpload.click();
+    });
+
+    dateiDropzone.addEventListener('click', function (event) {
+      if (event.target === dateiDropzone || event.target.classList.contains('drop-hinweis')) {
+        dateiUpload.click();
+      }
+    });
+
+    dateiDropzone.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        dateiUpload.click();
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(function (eventName) {
+      dateiDropzone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        dateiDropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(function (eventName) {
+      dateiDropzone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        dateiDropzone.classList.remove('dragover');
+      });
+    });
+
+    dateiDropzone.addEventListener('drop', function (event) {
+      const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      verarbeiteDatei(file);
+    });
+
+    document.getElementById('dateiEntfernen').addEventListener('click', function () {
+      geladeneDatei = null;
+      document.getElementById('dateiUpload').value = '';
+      setzeDateiStatus('Keine Datei ausgewählt. Text kann weiterhin direkt eingefügt werden.');
+    });
 
     function zeigeToast(text) {
       const toast = document.getElementById('toast');
@@ -806,6 +1146,11 @@
 
       const warnhinweis = document.getElementById('warnhinweis');
       warnhinweis.innerHTML = '';
+      const namenDropdownAnzahl = document.getElementById('namenDropdownAnzahl');
+      if (namenDropdownAnzahl) {
+        const eindeutigeNamen = new Set(moeglicheNamen.map(function (treffer) { return treffer.wort; }));
+        namenDropdownAnzahl.textContent = eindeutigeNamen.size;
+      }
       if (moeglicheNamen.length === 0) {
         const leer = document.createElement('div');
         leer.textContent = 'Keine möglichen übersehenen Namen gefunden.';
@@ -816,12 +1161,24 @@
           haeufigkeit.set(treffer.wort, (haeufigkeit.get(treffer.wort) || 0) + 1);
         });
         const ul = document.createElement('ul');
-        Array.from(haeufigkeit.entries()).forEach(function (eintrag) {
+        Array.from(haeufigkeit.entries())
+          .sort(function (a, b) { return a[0].localeCompare(b[0], 'de', { sensitivity: 'base' }); })
+          .forEach(function (eintrag) {
           const li = document.createElement('li');
-          li.appendChild(document.createTextNode(eintrag[0]));
-          if (eintrag[1] > 1) {
-            li.appendChild(document.createTextNode(' (' + eintrag[1] + '×)'));
-          }
+          const beschriftung = document.createElement('span');
+          beschriftung.textContent = eintrag[0] + (eintrag[1] > 1 ? ' (' + eintrag[1] + '×)' : '');
+
+          const tagButton = document.createElement('button');
+          tagButton.type = 'button';
+          tagButton.className = 'warn-taggen';
+          tagButton.textContent = 'Taggen';
+          tagButton.setAttribute('aria-label', eintrag[0] + ' im Text taggen');
+          tagButton.addEventListener('click', function () {
+            taggeWarnwort(eintrag[0]);
+          });
+
+          li.appendChild(beschriftung);
+          li.appendChild(tagButton);
           ul.appendChild(li);
         });
         warnhinweis.appendChild(ul);
@@ -850,6 +1207,35 @@
         tr.appendChild(tdOriginal);
         tbody.appendChild(tr);
       });
+    }
+
+    function taggeWarnwort(wort) {
+      if (!wort || !bereinigterText.includes(wort)) {
+        return;
+      }
+
+      const vorhandeneZuordnung = aktuelleZuordnungen.find(function (eintrag) {
+        return eintrag.original === wort;
+      });
+
+      let platzhalter;
+      if (vorhandeneZuordnung) {
+        platzhalter = vorhandeneZuordnung.platzhalter;
+      } else {
+        const nameNummern = aktuelleZuordnungen
+          .map(function (eintrag) {
+            const treffer = /^\[NAME_(\d+)\]$/.exec(eintrag.platzhalter);
+            return treffer ? Number(treffer[1]) : 0;
+          });
+        const naechsteNummer = Math.max(0, ...nameNummern) + 1;
+        platzhalter = '[NAME_' + naechsteNummer + ']';
+        aktuelleZuordnungen.push({ platzhalter: platzhalter, original: wort });
+      }
+
+      const anzahlVorkommen = bereinigterText.split(wort).length - 1;
+      bereinigterText = bereinigterText.split(wort).join(platzhalter);
+      renderAusgabe();
+      zeigeToast(wort + ' wurde an ' + anzahlVorkommen + (anzahlVorkommen === 1 ? ' Stelle' : ' Stellen') + ' getaggt.');
     }
 
     function auswahlPositionImElement(element) {
@@ -906,6 +1292,9 @@
 
     document.getElementById('allesZuruecksetzen').addEventListener('click', function () {
       document.getElementById('eingabe').value = '';
+      document.getElementById('dateiUpload').value = '';
+      geladeneDatei = null;
+      setzeDateiStatus('Keine Datei ausgewählt. Text kann weiterhin direkt eingefügt werden.');
       document.getElementById('wortliste').value = '';
       document.getElementById('kiAntwort').value = '';
       document.getElementById('manuellKuerzel').value = 'MANUELL';
