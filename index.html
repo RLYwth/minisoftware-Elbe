@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personenbezogene Angaben ersetzen</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #182230;
+      --muted: #667085;
+      --line: #dce3ec;
+      --primary: #2457d6;
+      --primary-hover: #1947bd;
+      --soft: #eef4ff;
+      --warn: #fff3a3;
+      --warn-border: #e4bd3d;
+      --success: #ecfdf3;
+      --success-strong: #157347;
+      --danger-soft: #fff1f0;
+      --danger: #b42318;
+      --radius: 16px;
+      --shadow: 0 6px 22px rgba(16, 24, 40, .07);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.5;
+    }
+
+    .seite {
+      width: min(1080px, calc(100% - 32px));
+      margin: 32px auto 56px;
+    }
+
+    .kopf {
+      margin-bottom: 24px;
+      padding: 4px 2px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 38px);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    .untertitel {
+      margin: 0;
+      color: var(--muted);
+      max-width: 760px;
+    }
+
+    .offline-hinweis {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 7px 11px;
+      border: 1px solid #b7e2c6;
+      border-radius: 999px;
+      background: var(--success);
+      color: #176b3a;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .offline-hinweis::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22a35a;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 18px 0 22px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.72);
+      backdrop-filter: blur(6px);
+    }
+
+    .statusleiste {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: #475467;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .status-chip.erfolg { background: var(--success); color: var(--success-strong); }
+    .status-chip.warnung { background: #fff8db; color: #855d00; }
+
+    .karte {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .abschnitt-kopf {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .schritt {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .beschreibung {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-weight: 700;
+    }
+
+    textarea, input {
+      width: 100%;
+      border: 1px solid #bfc9d7;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    textarea {
+      min-height: 210px;
+      resize: vertical;
+      padding: 13px 14px;
+    }
+
+    #wortliste { min-height: 120px; }
+
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(36, 87, 214, .12);
+    }
+
+    .feldgruppe + .feldgruppe { margin-top: 18px; }
+
+    details.zusatzoptionen {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfcfe;
+    }
+
+    details.zusatzoptionen summary {
+      cursor: pointer;
+      padding: 13px 15px;
+      font-weight: 700;
+      list-style: none;
+    }
+
+    details.zusatzoptionen summary::-webkit-details-marker { display: none; }
+    details.zusatzoptionen summary::after { content: '+'; float: right; color: var(--muted); }
+    details.zusatzoptionen[open] summary::after { content: '−'; }
+    details.zusatzoptionen .details-inhalt { padding: 0 15px 15px; }
+
+    .aktionen {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 17px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s ease, transform .05s ease;
+    }
+
+    button:active { transform: translateY(1px); }
+
+    .primaer {
+      background: var(--primary);
+      color: white;
+    }
+
+    .primaer:hover { background: var(--primary-hover); }
+
+    .sekundaer {
+      background: #edf1f6;
+      color: #293647;
+    }
+
+    .sekundaer:hover { background: #e2e8f0; }
+
+    .tertiar {
+      background: transparent;
+      color: #475467;
+      border: 1px solid var(--line);
+    }
+
+    .tertiar:hover { background: #f7f9fc; }
+
+    .gefahr {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border: 1px solid #f2c4c0;
+    }
+
+    .ausgabe-kopf {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .ausgabe-kopf h3 { margin: 0; }
+
+    .mini-aktionen { display: flex; flex-wrap: wrap; gap: 8px; }
+    .mini-aktionen button { padding: 7px 11px; font-size: 13px; }
+
+    .ausgabe {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 15px;
+      min-height: 130px;
+      background: #fbfcfe;
+    }
+
+    .ergebnis-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(260px, .75fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .pruefbox {
+      border: 1px solid #efd879;
+      border-radius: 10px;
+      background: #fffaf0;
+      padding: 15px;
+    }
+
+    #warnhinweis {
+      min-height: 0;
+      border: 0;
+      padding: 0;
+      background: transparent;
+    }
+
+    #warnhinweis ul {
+      margin: 8px 0 0;
+      padding-left: 22px;
+    }
+
+    #warnhinweis li { margin: 5px 0; }
+
+    .moeglicher-name {
+      background: var(--warn);
+      border-bottom: 2px solid var(--warn-border);
+      padding: 1px 3px;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+
+    .manuell {
+      margin-top: 16px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--soft);
+    }
+
+    .manuell-zeile {
+      display: grid;
+      grid-template-columns: minmax(150px, 220px) auto;
+      gap: 10px;
+      align-items: end;
+      margin-top: 10px;
+    }
+
+    .manuell input {
+      padding: 10px 11px;
+    }
+
+    .manuell button { margin: 0; }
+
+    .hinweis-klein {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      padding: 11px 13px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      background: #f5f7fa;
+      font-size: 14px;
+      color: #475467;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    tbody td:first-child {
+      width: 190px;
+      font-family: Consolas, "Courier New", monospace;
+      font-weight: 700;
+      color: #244b9b;
+    }
+
+    .leerzustand {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: 360px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      background: #182230;
+      color: white;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 20;
+    }
+
+    .toast.sichtbar { opacity: 1; transform: translateY(0); }
+
+    .datenschutz {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .seite { width: min(100% - 20px, 1080px); margin-top: 18px; }
+      .karte { padding: 18px; }
+      .ergebnis-grid { grid-template-columns: 1fr; }
+      .manuell-zeile { grid-template-columns: 1fr; }
+      .manuell-zeile button { width: 100%; }
+      .aktionen button { width: 100%; }
+      .toolbar { align-items: stretch; }
+      .toolbar > button { width: 100%; }
+      .mini-aktionen { width: 100%; }
+      .mini-aktionen button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <main class="seite">
+    <header class="kopf">
+      <h1>Personenbezogene Angaben ersetzen</h1>
+      <p class="untertitel">Text lokal pseudonymisieren, mögliche übersehene Namen prüfen und Platzhalter nach der KI-Verarbeitung wieder zurückwandeln.</p>
+      <div class="offline-hinweis">Läuft vollständig lokal im Browser</div>
+    </header>
+
+    <div class="toolbar" aria-label="Status und Aktionen">
+      <div class="statusleiste">
+        <span id="statusBearbeitung" class="status-chip">Bereit</span>
+        <span id="statusTreffer" class="status-chip">0 Ersetzungen</span>
+        <span id="statusWarnungen" class="status-chip">0 Prüfhilfen</span>
+      </div>
+      <button id="allesZuruecksetzen" class="gefahr">Alles zurücksetzen</button>
+    </div>
+
+    <section class="karte">
+      <div class="abschnitt-kopf">
+        <div class="schritt">1</div>
+        <div>
+          <h2>Text vorbereiten</h2>
+          <p class="beschreibung">Ausgangstext einfügen und bei Bedarf zusätzliche Namen, Firmen oder Orte hinterlegen.</p>
+        </div>
+      </div>
+
+      <div class="feldgruppe">
+        <label for="eingabe">Eingabetext</label>
+        <textarea id="eingabe" placeholder="Text hier einfügen ..."></textarea>
+      </div>
+
+      <details class="zusatzoptionen">
+        <summary>Eigene Wortliste hinzufügen <span class="beschreibung">(optional)</span></summary>
+        <div class="details-inhalt">
+          <label for="wortliste">Namen, Firmen oder Orte</label>
+          <textarea id="wortliste" placeholder="Ein Eintrag pro Zeile, z. B. Max Mustermann, Muster GmbH, Berlin ..."></textarea>
+          <p class="hinweis-klein">Einträge aus dieser Liste werden zusätzlich durch nummerierte Platzhalter ersetzt.</p>
+        </div>
+      </details>
+
+      <div class="aktionen">
+        <button id="bereinigen" class="primaer">Text jetzt bereinigen</button>
+      </div>
+    </section>
+
+    <section class="karte">
+      <div class="abschnitt-kopf">
+        <div class="schritt">2</div>
+        <div>
+          <h2>Bereinigten Text prüfen</h2>
+          <p class="beschreibung">Gelb markierte Wörter sind nur Hinweise auf möglicherweise übersehene Namen und werden nicht automatisch ersetzt.</p>
+        </div>
+      </div>
+
+      <div class="ergebnis-grid">
+        <div>
+          <div class="ausgabe-kopf">
+            <h3>Bereinigter Text</h3>
+            <div class="mini-aktionen">
+              <button id="bereinigtKopieren" class="tertiar">Text kopieren</button>
+            </div>
+          </div>
+          <div id="ausgabe" class="ausgabe"><span class="leerzustand">Nach dem Bereinigen erscheint hier der pseudonymisierte Text.</span></div>
+
+          <div class="manuell">
+            <h3>Manuell pseudonymisieren</h3>
+            <div class="hinweis-klein">Text oben markieren, ein Kürzel festlegen und nur diese Auswahl ersetzen.</div>
+            <div class="manuell-zeile">
+              <div>
+                <label for="manuellKuerzel">Platzhalter-Kürzel</label>
+                <input id="manuellKuerzel" type="text" value="MANUELL" aria-label="Platzhalter-Kürzel" maxlength="20">
+              </div>
+              <button id="manuellErsetzen" class="sekundaer">Auswahl ersetzen</button>
+            </div>
+            <div id="manuellMeldung" class="hinweis-klein" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <aside class="pruefbox">
+          <h3>Mögliche übersehene Namen</h3>
+          <p class="hinweis-klein">Bitte selbst prüfen. Diese Treffer werden nicht automatisch pseudonymisiert.</p>
+          <div id="warnhinweis">Keine Prüfung durchgeführt.</div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="karte">
+      <div class="abschnitt-kopf">
+        <div class="schritt">3</div>
+        <div>
+          <h2>Antwort der KI zurückwandeln</h2>
+          <p class="beschreibung">KI-Antwort mit Platzhaltern einfügen und bekannte Platzhalter wieder durch die Originalwerte ersetzen.</p>
+        </div>
+      </div>
+
+      <div class="ausgabe-kopf">
+        <label for="kiAntwort" style="margin:0">Antwort der KI</label>
+        <div class="mini-aktionen">
+          <button id="kiAntwortKopieren" class="tertiar">Antwort kopieren</button>
+        </div>
+      </div>
+      <textarea id="kiAntwort" placeholder="Antwort der KI hier einfügen ..."></textarea>
+      <div class="aktionen">
+        <button id="zurueckwandeln" class="primaer">Platzhalter zurückwandeln</button>
+      </div>
+    </section>
+
+    <section class="karte">
+      <div class="abschnitt-kopf">
+        <div class="schritt">4</div>
+        <div>
+          <h2>Zuordnung</h2>
+          <p class="beschreibung">Übersicht aller in diesem Durchlauf erzeugten Platzhalter und Originalwerte.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Platzhalter</th>
+              <th>Originalwert</th>
+            </tr>
+          </thead>
+          <tbody id="zuordnung"><tr><td colspan="2" class="leerzustand">Noch keine Zuordnungen vorhanden.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="datenschutz">Keine Datenübertragung: Die Verarbeitung findet ausschließlich lokal in dieser HTML-Datei statt.</p>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    let aktuelleZuordnungen = [];
+    let bereinigterText = '';
+    const manuelleZaehler = new Map();
+
+    function zeigeToast(text) {
+      const toast = document.getElementById('toast');
+      toast.textContent = text;
+      toast.classList.add('sichtbar');
+      clearTimeout(zeigeToast.timer);
+      zeigeToast.timer = setTimeout(function () { toast.classList.remove('sichtbar'); }, 1800);
+    }
+
+    function kopiereText(text, erfolgsmeldung) {
+      if (!text) {
+        zeigeToast('Es gibt noch keinen Text zum Kopieren.');
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { zeigeToast(erfolgsmeldung); }).catch(function () { fallbackKopieren(text, erfolgsmeldung); });
+      } else {
+        fallbackKopieren(text, erfolgsmeldung);
+      }
+    }
+
+    function fallbackKopieren(text, erfolgsmeldung) {
+      const feld = document.createElement('textarea');
+      feld.value = text;
+      feld.style.position = 'fixed';
+      feld.style.opacity = '0';
+      document.body.appendChild(feld);
+      feld.select();
+      try { document.execCommand('copy'); zeigeToast(erfolgsmeldung); }
+      catch (e) { zeigeToast('Kopieren war nicht möglich.'); }
+      document.body.removeChild(feld);
+    }
+
+    function aktualisiereStatus(anzahlWarnungen) {
+      const treffer = aktuelleZuordnungen.length;
+      const statusBearbeitung = document.getElementById('statusBearbeitung');
+      const statusTreffer = document.getElementById('statusTreffer');
+      const statusWarnungen = document.getElementById('statusWarnungen');
+      statusBearbeitung.textContent = bereinigterText ? 'Bereinigt' : 'Bereit';
+      statusBearbeitung.className = 'status-chip' + (bereinigterText ? ' erfolg' : '');
+      statusTreffer.textContent = treffer + (treffer === 1 ? ' Ersetzung' : ' Ersetzungen');
+      statusTreffer.className = 'status-chip' + (treffer ? ' erfolg' : '');
+      statusWarnungen.textContent = anzahlWarnungen + (anzahlWarnungen === 1 ? ' Prüfhilfe' : ' Prüfhilfen');
+      statusWarnungen.className = 'status-chip' + (anzahlWarnungen ? ' warnung' : '');
+    }
+
+    document.getElementById('bereinigen').addEventListener('click', function () {
+      let text = document.getElementById('eingabe').value;
+      const zuordnungen = [];
+
+      const mailMap = new Map();
+      let mailZaehler = 0;
+
+      const mailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+      text = text.replace(mailRegex, function (treffer) {
+        if (!mailMap.has(treffer)) {
+          mailZaehler++;
+          const platzhalter = '[MAIL_' + mailZaehler + ']';
+          mailMap.set(treffer, platzhalter);
+          zuordnungen.push({ platzhalter, original: treffer });
+        }
+        return mailMap.get(treffer);
+      });
+
+      const persMap = new Map();
+      let persZaehler = 0;
+
+      // Personalnummer nach Testregel: Personalnummer, Personal-Nr., Pers.-Nr., PersNr oder PN + 5 Ziffern.
+      const persRegex = /\b(?:Personalnummer|Personal-Nr\.|Pers\.-Nr\.|PersNr|PN)\s*[:#-]?\s*\d{5}\b/gi;
+      text = text.replace(persRegex, function (treffer) {
+        if (!persMap.has(treffer)) {
+          persZaehler++;
+          const platzhalter = '[PERS_' + persZaehler + ']';
+          persMap.set(treffer, platzhalter);
+          zuordnungen.push({ platzhalter, original: treffer });
+        }
+        return persMap.get(treffer);
+      });
+
+      const ibanMap = new Map();
+      let ibanZaehler = 0;
+
+      // IBAN nach Testregel: DE + 2-stellige Prüfziffer + 8-stellige BLZ + 10-stellige Kontonummer.
+      // Leerzeichen zwischen den Bestandteilen bzw. in Vierergruppen werden ebenfalls akzeptiert.
+      const ibanRegex = /\bDE\s*\d{2}(?:\s*\d){18}\b/gi;
+      text = text.replace(ibanRegex, function (treffer) {
+        if (!ibanMap.has(treffer)) {
+          ibanZaehler++;
+          const platzhalter = '[IBAN_' + ibanZaehler + ']';
+          ibanMap.set(treffer, platzhalter);
+          zuordnungen.push({ platzhalter, original: treffer });
+        }
+        return ibanMap.get(treffer);
+      });
+
+      const kfzMap = new Map();
+      let kfzZaehler = 0;
+
+      // Kfz-Kennzeichen nach Testregel: Ortskürzel - Buchstaben Zahlen.
+      // Erlaubt normalen Bindestrich sowie Gedankenstrich mit optionalen Leerzeichen.
+      const kfzRegex = /\b[A-ZÄÖÜ]{1,3}\s*[-–]\s*[A-ZÄÖÜ]{1,2}\s+\d{1,4}\b/g;
+      text = text.replace(kfzRegex, function (treffer) {
+        if (!kfzMap.has(treffer)) {
+          kfzZaehler++;
+          const platzhalter = '[KFZ_' + kfzZaehler + ']';
+          kfzMap.set(treffer, platzhalter);
+          zuordnungen.push({ platzhalter, original: treffer });
+        }
+        return kfzMap.get(treffer);
+      });
+
+      const kundeMap = new Map();
+      let kundeZaehler = 0;
+
+      // Kundennummer nach Testregel: KD + 4-stelliges Jahr + 4-stellige laufende Kundennummer.
+      // Zwischen den Bestandteilen werden Bindestriche oder Leerzeichen akzeptiert.
+      const kundeRegex = /\bKD\s*-\s*\d{4}\s*-\s*\d{4}\b/gi;
+      text = text.replace(kundeRegex, function (treffer) {
+        if (!kundeMap.has(treffer)) {
+          kundeZaehler++;
+          const platzhalter = '[KUNDE_' + kundeZaehler + ']';
+          kundeMap.set(treffer, platzhalter);
+          zuordnungen.push({ platzhalter, original: treffer });
+        }
+        return kundeMap.get(treffer);
+      });
+
+      const telMap = new Map();
+      let telZaehler = 0;
+
+      // Einfache Erkennung typischer Telefonnummern, z. B.
+      // +49 30 1234567, 030-1234567, (030) 123 45 67
+      const telRegex = /(?<!\w)(?:\+?\d{1,3}[\s./-]?)?(?:\(?\d{2,5}\)?[\s./-]?)\d(?:[\d\s./-]{4,}\d)(?!\w)/g;
+
+      text = text.replace(telRegex, function (treffer) {
+        const original = treffer.trim();
+
+        // Verhindert, dass kurze Zahlenfolgen versehentlich ersetzt werden.
+        const anzahlZiffern = (original.match(/\d/g) || []).length;
+        if (anzahlZiffern < 6) {
+          return treffer;
+        }
+
+        if (!telMap.has(original)) {
+          telZaehler++;
+          const platzhalter = '[TEL_' + telZaehler + ']';
+          telMap.set(original, platzhalter);
+          zuordnungen.push({ platzhalter, original });
+        }
+
+        // Führende/abschließende Leerzeichen aus dem Treffer bleiben erhalten.
+        return treffer.replace(original, telMap.get(original));
+      });
+
+      const titelNameMap = new Map();
+      let titelNameZaehler = 0;
+
+      // Nach Anreden/Titeln sowie ihren gebräuchlichen gebeugten und
+      // ausgeschriebenen Formen wird das unmittelbar folgende Namenswort ersetzt.
+      // Auch Kombinationen wie "Frau Dr. Müller" oder "Herrn Professor Schmidt"
+      // werden berücksichtigt.
+      const titelWort = '(?:Frau|Frauen|Herr|Herrn|Herren|Fräulein|Dr\.?|Doktor|Doktorin|Doktoren|Prof\.?|Professor|Professorin|Professoren|Professorinnen)';
+      const titelRegex = new RegExp(`\\b((?:${titelWort}\\s+)+)([A-Za-zÄÖÜäöüßÀ-ÖØ-öø-ÿ'-]+)`, 'gi');
+      text = text.replace(titelRegex, function (treffer, titelTeil, name) {
+        if (!titelNameMap.has(name)) {
+          titelNameZaehler++;
+          const platzhalter = '[NAME_' + titelNameZaehler + ']';
+          titelNameMap.set(name, platzhalter);
+          zuordnungen.push({ platzhalter, original: name });
+        }
+        return titelTeil + titelNameMap.get(name);
+      });
+
+      const wortMap = new Map();
+      let wortZaehler = 0;
+
+      const wortliste = document.getElementById('wortliste').value
+        .split(/\r?\n/)
+        .map(function (eintrag) { return eintrag.trim(); })
+        .filter(function (eintrag) { return eintrag.length > 0; });
+
+      wortliste.forEach(function (eintrag) {
+        if (!text.includes(eintrag)) {
+          return;
+        }
+
+        if (!wortMap.has(eintrag)) {
+          wortZaehler++;
+          const platzhalter = '[WORT_' + wortZaehler + ']';
+          wortMap.set(eintrag, platzhalter);
+          zuordnungen.push({ platzhalter, original: eintrag });
+        }
+
+        text = text.split(eintrag).join(wortMap.get(eintrag));
+      });
+
+      aktuelleZuordnungen = zuordnungen;
+      bereinigterText = text;
+      manuelleZaehler.clear();
+      document.getElementById('manuellMeldung').textContent = '';
+      renderAusgabe();
+      zeigeToast('Text wurde lokal bereinigt.');
+    });
+
+
+    function findeMoeglicheNamen(text) {
+      const moeglicheNamen = [];
+      const wortRegex = /\b[A-ZÄÖÜ][A-Za-zÄÖÜäöüßÀ-ÖØ-öø-ÿ'-]*\b/g;
+      let wortTreffer;
+      while ((wortTreffer = wortRegex.exec(text)) !== null) {
+        const wort = wortTreffer[0];
+        const start = wortTreffer.index;
+
+        if (start > 0 && text[start - 1] === '[') {
+          continue;
+        }
+
+        const davor = text.slice(0, start);
+        const seitSatzanfang = davor.split(/[.!?](?:\s+|$)/).pop();
+        if (!seitSatzanfang || !/[A-Za-zÄÖÜäöüßÀ-ÖØ-öø-ÿ0-9]/.test(seitSatzanfang)) {
+          continue;
+        }
+
+        moeglicheNamen.push({ wort: wort, start: start, ende: start + wort.length });
+      }
+      return moeglicheNamen;
+    }
+
+    function renderAusgabe() {
+      const moeglicheNamen = findeMoeglicheNamen(bereinigterText);
+      const ausgabe = document.getElementById('ausgabe');
+      ausgabe.innerHTML = '';
+      let letztePosition = 0;
+      moeglicheNamen.forEach(function (treffer) {
+        ausgabe.appendChild(document.createTextNode(bereinigterText.slice(letztePosition, treffer.start)));
+        const markierung = document.createElement('span');
+        markierung.className = 'moeglicher-name';
+        markierung.textContent = treffer.wort;
+        ausgabe.appendChild(markierung);
+        letztePosition = treffer.ende;
+      });
+      ausgabe.appendChild(document.createTextNode(bereinigterText.slice(letztePosition)));
+
+      const warnhinweis = document.getElementById('warnhinweis');
+      warnhinweis.innerHTML = '';
+      if (moeglicheNamen.length === 0) {
+        const leer = document.createElement('div');
+        leer.textContent = 'Keine möglichen übersehenen Namen gefunden.';
+        warnhinweis.appendChild(leer);
+      } else {
+        const haeufigkeit = new Map();
+        moeglicheNamen.forEach(function (treffer) {
+          haeufigkeit.set(treffer.wort, (haeufigkeit.get(treffer.wort) || 0) + 1);
+        });
+        const ul = document.createElement('ul');
+        Array.from(haeufigkeit.entries()).forEach(function (eintrag) {
+          const li = document.createElement('li');
+          li.appendChild(document.createTextNode(eintrag[0]));
+          if (eintrag[1] > 1) {
+            li.appendChild(document.createTextNode(' (' + eintrag[1] + '×)'));
+          }
+          ul.appendChild(li);
+        });
+        warnhinweis.appendChild(ul);
+      }
+
+      aktualisiereStatus(moeglicheNamen.length);
+
+      const tbody = document.getElementById('zuordnung');
+      tbody.innerHTML = '';
+      if (aktuelleZuordnungen.length === 0) {
+        const trLeer = document.createElement('tr');
+        const tdLeer = document.createElement('td');
+        tdLeer.colSpan = 2;
+        tdLeer.className = 'leerzustand';
+        tdLeer.textContent = 'Noch keine Zuordnungen vorhanden.';
+        trLeer.appendChild(tdLeer);
+        tbody.appendChild(trLeer);
+      }
+      aktuelleZuordnungen.forEach(function (eintrag) {
+        const tr = document.createElement('tr');
+        const tdPlatzhalter = document.createElement('td');
+        const tdOriginal = document.createElement('td');
+        tdPlatzhalter.textContent = eintrag.platzhalter;
+        tdOriginal.textContent = eintrag.original;
+        tr.appendChild(tdPlatzhalter);
+        tr.appendChild(tdOriginal);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function auswahlPositionImElement(element) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+        return null;
+      }
+      const range = selection.getRangeAt(0);
+      if (!element.contains(range.commonAncestorContainer)) {
+        return null;
+      }
+      const vorAuswahl = range.cloneRange();
+      vorAuswahl.selectNodeContents(element);
+      vorAuswahl.setEnd(range.startContainer, range.startOffset);
+      const start = vorAuswahl.toString().length;
+      return { start: start, ende: start + range.toString().length, text: range.toString() };
+    }
+
+    document.getElementById('manuellErsetzen').addEventListener('click', function () {
+      const ausgabe = document.getElementById('ausgabe');
+      const auswahl = auswahlPositionImElement(ausgabe);
+      const meldung = document.getElementById('manuellMeldung');
+
+      if (!auswahl || !auswahl.text.trim()) {
+        meldung.textContent = 'Bitte zuerst Text im bereinigten Text markieren.';
+        return;
+      }
+
+      let kuerzel = document.getElementById('manuellKuerzel').value.trim().toUpperCase();
+      kuerzel = kuerzel.replace(/[^A-Z0-9ÄÖÜ_]/g, '');
+      if (!kuerzel) {
+        kuerzel = 'MANUELL';
+      }
+
+      const naechsteNummer = (manuelleZaehler.get(kuerzel) || 0) + 1;
+      manuelleZaehler.set(kuerzel, naechsteNummer);
+      const platzhalter = '[' + kuerzel + '_' + naechsteNummer + ']';
+      const original = bereinigterText.slice(auswahl.start, auswahl.ende);
+
+      bereinigterText = bereinigterText.slice(0, auswahl.start) + platzhalter + bereinigterText.slice(auswahl.ende);
+      aktuelleZuordnungen.push({ platzhalter: platzhalter, original: original });
+      renderAusgabe();
+      meldung.textContent = original + ' wurde durch ' + platzhalter + ' ersetzt.';
+      window.getSelection().removeAllRanges();
+    });
+
+    document.getElementById('bereinigtKopieren').addEventListener('click', function () {
+      kopiereText(bereinigterText, 'Bereinigter Text kopiert.');
+    });
+
+    document.getElementById('kiAntwortKopieren').addEventListener('click', function () {
+      kopiereText(document.getElementById('kiAntwort').value, 'Antwort kopiert.');
+    });
+
+    document.getElementById('allesZuruecksetzen').addEventListener('click', function () {
+      document.getElementById('eingabe').value = '';
+      document.getElementById('wortliste').value = '';
+      document.getElementById('kiAntwort').value = '';
+      document.getElementById('manuellKuerzel').value = 'MANUELL';
+      document.getElementById('manuellMeldung').textContent = '';
+      aktuelleZuordnungen = [];
+      bereinigterText = '';
+      manuelleZaehler.clear();
+      const ausgabe = document.getElementById('ausgabe');
+      ausgabe.innerHTML = '<span class="leerzustand">Nach dem Bereinigen erscheint hier der pseudonymisierte Text.</span>';
+      document.getElementById('warnhinweis').textContent = 'Keine Prüfung durchgeführt.';
+      const tbody = document.getElementById('zuordnung');
+      tbody.innerHTML = '<tr><td colspan="2" class="leerzustand">Noch keine Zuordnungen vorhanden.</td></tr>';
+      aktualisiereStatus(0);
+      zeigeToast('Alle Inhalte wurden zurückgesetzt.');
+    });
+
+    document.getElementById('zurueckwandeln').addEventListener('click', function () {
+      let text = document.getElementById('kiAntwort').value;
+
+      aktuelleZuordnungen.forEach(function (eintrag) {
+        text = text.split(eintrag.platzhalter).join(eintrag.original);
+      });
+
+      document.getElementById('kiAntwort').value = text;
+      zeigeToast('Bekannte Platzhalter wurden zurückgewandelt.');
+    });
+  </script>
+</body>
+</html>
