@@ -681,6 +681,11 @@
           <button id="allesZuruecksetzen" class="gefahr">↻ Alles zurücksetzen</button>
         </div>
 
+        <section class="karte">
+          <div class="abschnitt-kopf"><div class="schritt">3</div><div><h2>Manuell prüfen & anpassen</h2><p class="beschreibung">Bereinigten Text kontrollieren, mögliche übersehene Namen taggen und einzelne Textstellen gezielt pseudonymisieren.</p></div></div>
+          <div class="ergebnis-grid"><div><div class="ausgabe-kopf"><h3>Bereinigter Text</h3><div class="mini-aktionen"><button id="bereinigtKopieren" class="tertiar">Text kopieren</button></div></div><div id="ausgabe" class="ausgabe"><span class="leerzustand">Nach dem Bereinigen erscheint hier der pseudonymisierte Text.</span></div><div class="manuell"><h3>Manuell pseudonymisieren</h3><div class="hinweis-klein">Text oben markieren, ein Kürzel festlegen und nur diese Auswahl ersetzen.</div><div class="manuell-zeile"><div><label for="manuellKuerzel">Platzhalter-Kürzel</label><input id="manuellKuerzel" type="text" value="MANUELL" aria-label="Platzhalter-Kürzel" maxlength="20"></div><button id="manuellErsetzen" class="sekundaer">Auswahl ersetzen</button></div><div id="manuellMeldung" class="hinweis-klein" aria-live="polite"></div></div></div><aside class="pruefbox"><details class="namen-dropdown"><summary><span>Mögliche übersehene Namen</span><span id="namenDropdownAnzahl" class="namen-anzahl">0</span></summary><div class="namen-dropdown-inhalt"><p class="hinweis-klein">Treffer können hier direkt getaggt und im Text ersetzt werden.</p><div id="warnhinweis">Keine Prüfung durchgeführt.</div></div></details></aside></div>
+        </section>
+
         <section id="schritt1" class="karte">
           <div class="abschnitt-kopf"><div class="schritt">1</div><div><h2>Dokument hochladen oder Text einfügen</h2><p class="beschreibung">Unterstützt gängige Dokument- und Textformate. Inhalte werden anschließend in denselben Cloak-Workflow übernommen.</p></div></div>
           <div class="input-grid">
@@ -700,11 +705,6 @@
         <section class="karte">
           <div class="abschnitt-kopf"><div class="schritt">2</div><div><h2>Text analysieren & bereinigen</h2><p class="beschreibung">Personenbezogene Angaben automatisch erkennen und durch Platzhalter ersetzen.</p></div></div>
           <div class="section-action-row"><div class="aktionen" style="margin:0"><button id="bereinigen" class="primaer">✣ Text analysieren & bereinigen</button></div><div class="recognition-box"><strong>Was wird erkannt?</strong><div class="recognition-grid"><span>Namen von Personen</span><span>Telefonnummern</span><span>IBAN & Kennzeichen</span><span>Kundennummern</span><span>E-Mail-Adressen</span><span>Eigene Wortliste</span></div></div></div>
-        </section>
-
-        <section class="karte">
-          <div class="abschnitt-kopf"><div class="schritt">3</div><div><h2>Manuell prüfen & anpassen</h2><p class="beschreibung">Bereinigten Text kontrollieren, mögliche übersehene Namen taggen und einzelne Textstellen gezielt pseudonymisieren.</p></div></div>
-          <div class="ergebnis-grid"><div><div class="ausgabe-kopf"><h3>Bereinigter Text</h3><div class="mini-aktionen"><button id="bereinigtKopieren" class="tertiar">Text kopieren</button></div></div><div id="ausgabe" class="ausgabe"><span class="leerzustand">Nach dem Bereinigen erscheint hier der pseudonymisierte Text.</span></div><div class="manuell"><h3>Manuell pseudonymisieren</h3><div class="hinweis-klein">Text oben markieren, ein Kürzel festlegen und nur diese Auswahl ersetzen.</div><div class="manuell-zeile"><div><label for="manuellKuerzel">Platzhalter-Kürzel</label><input id="manuellKuerzel" type="text" value="MANUELL" aria-label="Platzhalter-Kürzel" maxlength="20"></div><button id="manuellErsetzen" class="sekundaer">Auswahl ersetzen</button></div><div id="manuellMeldung" class="hinweis-klein" aria-live="polite"></div></div></div><aside class="pruefbox"><details class="namen-dropdown"><summary><span>Mögliche übersehene Namen</span><span id="namenDropdownAnzahl" class="namen-anzahl">0</span></summary><div class="namen-dropdown-inhalt"><p class="hinweis-klein">Treffer können hier direkt getaggt und im Text ersetzt werden.</p><div id="warnhinweis">Keine Prüfung durchgeführt.</div></div></details></aside></div>
         </section>
 
         <section class="karte">
