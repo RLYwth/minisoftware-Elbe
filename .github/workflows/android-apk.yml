@@ -1,0 +1,62 @@
+name: Android APK bauen
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - android/**
+      - index.html
+      - manifest.webmanifest
+      - service-worker.js
+      - icons/**
+      - .github/workflows/android-apk.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Java 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle 9.5 einrichten
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.0'
+
+      - name: Installierbare APK bauen
+        run: gradle -p android assembleDebug --stacktrace
+
+      - name: APK verständlich benennen
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk Cloak-Android.apk
+
+      - name: APK als Build-Artefakt speichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cloak-Android
+          path: Cloak-Android.apk
+
+      - name: APK als GitHub Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: android-${{ github.run_number }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" Cloak-Android.apk --clobber
+          else
+            gh release create "$RELEASE_TAG" Cloak-Android.apk \
+              --target "$GITHUB_SHA" \
+              --title "Cloak Android ${{ github.run_number }}" \
+              --notes "Automatisch gebaute, installierbare Test-APK für den KI-Use-Cases-Kurs. Die APK ist mit Androids Debug-Schlüssel signiert und nicht für den Play Store bestimmt."
+          fi
