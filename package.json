@@ -1,0 +1,43 @@
+{
+  "name": "minisoftware-elbe",
+  "version": "1.0.0",
+  "description": "Portable Windows-Version der Cloak Mini-Software",
+  "main": "electron/main.cjs",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "43.4.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "de.wbsedu.elbe.cloak",
+    "productName": "Cloak",
+    "asar": true,
+    "artifactName": "minisoftware-Elbe-v1.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "icons/**/*",
+      "index.html",
+      "manifest.webmanifest",
+      "service-worker.js",
+      "package.json"
+    ],
+    "win": {
+      "icon": "icons/icon-512.png",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  }
+}

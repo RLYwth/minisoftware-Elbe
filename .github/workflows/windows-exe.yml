@@ -1,0 +1,60 @@
+name: Portable Windows-EXE bauen
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - windows-exe
+    paths:
+      - electron/**
+      - icons/**
+      - index.html
+      - manifest.webmanifest
+      - service-worker.js
+      - package.json
+      - .github/workflows/windows-exe.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v5
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Electron-Abhängigkeiten laden
+        run: npm install --no-audit --no-fund
+
+      - name: Portable Windows-EXE bauen
+        run: npm run build:win
+
+      - name: EXE als Build-Artefakt speichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: minisoftware-Elbe-Windows
+          path: dist/minisoftware-Elbe-v1.exe
+          if-no-files-found: error
+
+      - name: EXE als GitHub Release veröffentlichen
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: windows-${{ github.run_number }}
+        run: |
+          $exe = 'dist/minisoftware-Elbe-v1.exe'
+          if (gh release view $env:RELEASE_TAG 2>$null) {
+            gh release upload $env:RELEASE_TAG $exe --clobber
+          } else {
+            gh release create $env:RELEASE_TAG $exe `
+              --target '${{ github.sha }}' `
+              --title 'Cloak Windows ${{ github.run_number }}' `
+              --notes 'Automatisch gebaute portable Windows-Testversion. Die EXE ist nicht digital signiert und kann deshalb eine Windows-Sicherheitswarnung anzeigen.'
+          }
